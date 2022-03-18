@@ -4,9 +4,20 @@ import android.app.Activity
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.util.Log
+import android.widget.Toast
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import com.backendless.Backendless
 import com.mistershorr.birthdaytracker.databinding.ActivityLoginBinding
+import com.backendless.exceptions.BackendlessFault
+
+import com.backendless.BackendlessUser
+
+import com.backendless.async.callback.AsyncCallback
+
+
+
 
 class LoginActivity : AppCompatActivity() {
 
@@ -41,10 +52,30 @@ class LoginActivity : AppCompatActivity() {
         binding = ActivityLoginBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        Backendless.initApp( this, Constants.APP_ID, Constants.API_KEY );
+
+        binding.buttonLoginLogin.setOnClickListener {
+            val username = binding.editTextLoginUsername.text.toString()
+            val password = binding.editTextLoginPassword.text.toString()
+
+            Backendless.UserService.login(
+                username,
+                password,
+                object : AsyncCallback<BackendlessUser?> {
+                    override fun handleResponse(user: BackendlessUser?) {
+                        // user has been logged in
+                        Log.d("Login Activity", "handleResponse: ${user?.email}")
+                        Toast.makeText(this@LoginActivity, "${user?.getProperty("username")}", Toast.LENGTH_SHORT).show()
+                    }
+
+                    override fun handleFault(fault: BackendlessFault) {
+                        // login failed, to get the error code call fault.getCode()
+                        Log.d("Login Activity", "handleFault: ${fault.message}")
+                    }
+                })
+        }
+
         binding.textViewLoginCreateAccount.setOnClickListener {
-            // launch the registration activity
-            // pass the values of username and password along to the new activity
-            // 1. extract any information you might need from edit texts
             val username = binding.editTextLoginUsername.text.toString()
             val password = binding.editTextLoginPassword.text.toString()
 
@@ -55,10 +86,8 @@ class LoginActivity : AppCompatActivity() {
                 putExtra(EXTRA_USERNAME, username)
                 putExtra(EXTRA_PASSWORD, password)
             }
-
             // 3. launch the activity
-//            startActivity(registrationIntent)
-
+            startActivity(registrationIntent)
             // 3b. Alternate: Could launch the activity for a result instead
             // use the variable from the register for result contract above
             startRegistrationForResult.launch(registrationIntent)

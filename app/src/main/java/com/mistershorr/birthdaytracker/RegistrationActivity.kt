@@ -5,6 +5,16 @@ import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.widget.Toast
 import com.mistershorr.birthdaytracker.databinding.ActivityRegistrationBinding
+import com.backendless.exceptions.BackendlessFault
+
+import com.backendless.BackendlessUser
+
+import com.backendless.async.callback.AsyncCallback
+
+import com.backendless.Backendless
+
+
+
 
 class RegistrationActivity : AppCompatActivity() {
 
@@ -33,20 +43,41 @@ class RegistrationActivity : AppCompatActivity() {
             }
 
             else {
-                var returnToLoginIntent = Intent().apply {
-                    putExtra(
-                        LoginActivity.EXTRA_USERNAME,
-                        binding.editTextRegistrationUsername.text.toString()
-                    )
-                    putExtra(
-                        LoginActivity.EXTRA_PASSWORD,
-                        binding.editTextRegistrationPassword.text.toString()
-                    )
-                }
-                setResult(RESULT_OK, returnToLoginIntent)
-                finish()
+                registerUser()
             }// closes the activity
         }
+    }
+
+    private fun registerUser() {
+        val email = binding.editTextRegistrationEmail.text.toString()
+        val password = binding.editTextRegistrationPassword.text.toString()
+        val username = binding.editTextRegistrationUsername.text.toString()
+        val name = binding.editTextRegistrationName.text.toString()
+        val user = BackendlessUser()
+
+        user.setProperty("email", email)
+        user.password = password
+        user.setProperty("username", username)
+        user.setProperty("name", name)
+
+        Backendless.UserService.register(user, object : AsyncCallback<BackendlessUser?> {
+            override fun handleResponse(registeredUser: BackendlessUser?) {
+                Toast.makeText(this@RegistrationActivity, "${registeredUser?.getProperty("username")} has been registered successfully", Toast.LENGTH_SHORT).show()
+                returnToLogin(username, password)
+            }
+            override fun handleFault(fault: BackendlessFault) {
+                Toast.makeText(this@RegistrationActivity, "Error: ${fault.message}", Toast.LENGTH_SHORT).show()
+            }
+        })
+    }
+
+    private fun returnToLogin(username: String, password: String) {
+        var returnToLoginIntent = Intent().apply {
+            putExtra(LoginActivity.EXTRA_USERNAME, username)
+            putExtra(LoginActivity.EXTRA_PASSWORD, password)
+        }
+        setResult(RESULT_OK, returnToLoginIntent)
+        finish()
     }
 }
 
